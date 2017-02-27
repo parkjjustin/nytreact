@@ -1,79 +1,136 @@
-var React = require("react");
-var Search = require("./children/Search");
-var Results = require("./children/Results");
-var Saved = require("./children/Saved");
-var helpers = require("./utils/helpers");
+import React, {Component} from 'react';
+import Search from './Search.js';
+import Results from './Results.js';
+import Saved from './Saved.js';
+import helpers from './utils/helpers.js';
 
-var Main = React.createClass({
+class Main extends Component {
 
-  getInitialState: function () {
-    return { searchTerm: "", results: [], saved: [] };
-  },
+    constructor(props){
+        super(props);
+        this.state = {
+            query: '',
+            begin: '',
+            end: '',
+            results: [],
+            saved: []
+        }
+        this.setTerm = this.setTerm.bind(this);
+        this.updateSaved = this.updateSaved.bind(this);
+        this.addSaved = this.addSaved.bind(this);
+        this._handleSave = this._handleSave.bind(this);
+        this._handleDelete = this._handleDelete.bind(this);
+    }
 
-  componentDidMount: function () {
-    helpers.getSaved().then(function (response) {
-      console.log(response);
-      if (response !== this.state.saved) {
-        console.log("Saved", response.data);
-        this.setState({ saved: response.data });
-      }
-    }.bind(this));
-  },
+    componentDidMount(){
+        helpers.getArticles().then( (saved) => {
+                let newArray = this.state.saved.slice();
+                newArray = saved.data;
+                this.setState({ saved: newArray });
+            });
+        
+    }
 
-  componentDidUpdate: function () {
-    helpers.runQuery(this.state.searchTerm).then(function (data) {
-      if (data !== this.state.results) {
-        console.log("Address", data);
-        this.setState({ results: data });
+    updateSaved(object){
+        let array = this.state.saved;
+        let index = array.findIndex(x => x.title == object.title);
+        array.splice(index, 1);
+        this.setState({saved: array});
+    }
 
-        helpers.postsaved(this.state.searchTerm).then(function () {
-          console.log("Updated!");
+    addSaved(object){
+        let array = this.state.saved;
+        array.push(object);
+        this.setState({saved: array});
+    }
 
-          helpers.getSaved().then(function (response) {
-            console.log("Current saved", response.data);
+    setSearch(term, start, end){
+        this.setState({
+            topic: term,
+            startYear: start,
+            endYear: end
+        });
+    }
 
-            console.log("saved", response.data);
+    _handleSave (event) {
+        event.preventDefault();
+        let object = {
+            title: event.target.getAttribute('data-title'),
+            link: event.target.getAttribute('data-link')
+        }
+        helpers.saveArticle(object);
+        this.addSaved(object);
+    }
 
-            this.setState({ saved: response.data });
+    _handleDelete (event){
+        event.preventDefault();;
+        let object = {
+            title: event.target.getAttribute('data-title'),
+            link: event.target.getAttribute('data-link')
+        }
+        this.updateSaved(object);
+        helpers.deleteArticle(object);
+    }
 
-          }.bind(this));
-        }.bind(this));
-      }
-    }.bind(this));
-  },
-  setTerm: function (term) {
-    this.setState({ searchTerm: term });
-  },
-  render: function () {
-    return (
-      <div className="container">
-        <div className="row">
-          <div className="jumbotron">
-            <h1 className="text-center"><strong><i className="fa fa-newspaper-o"></i> New York Times Search</strong></h1>
-          </div>
+    setTerm(queryTerm, beginTerm, endTerm){
+        this.setState({
+            query: queryTerm,
+            begin: beginTerm,
+            end: endTerm
+        });
+    }
 
-          <div className="col-md-12">
-
-            <Search setTerm={this.setTerm} />
-
-          </div>
-
-          <div className="col-md-12">
-
-            <Results results={this.state.results} />
-
-          </div>
-
-          <div className="col-md-12">
-
-            <Saved saved={this.state.saved} />
-
-          </div>
+    componentDidUpdate(prevProps, prevState){
+        if(prevState.query !== this.state.query || prevState.begin !== this.state.begin || prevState.end !== this.state.end) {
+            helpers.runQuery(this.state.query, this.state.begin, this.state.end).then((data) => {
+                if(data !== this.state.results){
+                    console.log(data);
+                    this.setState({
+                        results: data
+                    });
+                }
+            });
+        }
+        if(prevState.saved.length !== this.state.saved.length){
+            helpers.getArticles().then( (saved) => {
+                if(saved.data !== this.state.saved){
+                    let newArray = this.state.saved.slice();
+                    newArray = saved.data;
+                    this.setState({ saved: newArray });
+                }
+            });
+        }
+    }
+    
+    render() {
+        return (
+        <div>
+            <div className="jumbotron">
+                <div className="container">
+                    <h1 className="text-center">New York Times Article Scrubber</h1>
+                    <h3 className="text-center">Search for and annontate articles of interest!</h3>
+                </div>
+            </div>
+            <div className="container">
+                <div className="row">
+                    <div className="col-md-12">
+                        <Search setTerm={this.setTerm} />
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-md-12">
+                        <Results results={this.state.results} _handleSave={this._handleSave} />
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-md-12">
+                        <Saved savedArticles={this.state.saved} _handleDelete={this._handleDelete} />
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    );
-  }
-});
+        );
+    }
+}
 
-// Export the component back for use in other files
-module.exports = Main;
+export default Main;

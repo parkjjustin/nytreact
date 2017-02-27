@@ -1,11 +1,13 @@
-// Include Server Dependencies
-var express = require("express");
-var bodyParser = require("body-parser");
-var logger = require("morgan");
-var mongoose = require("mongoose");
-var Saved = require("./models/Saved.js");
-var app = express();
-var PORT = process.env.PORT || 3000;
+// Server Dependencies
+const express = require('express'),
+    bodyParser = require('body-parser'),
+    logger = require('morgan'),
+    mongoose = require('mongoose'),
+    Promise = require('bluebird');
+
+const Saved = require('./models/Saved.js');
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 let allowCrossDomain = function(req, res, next) {
     res.header('Access-Control-Allow-Origin', "*");
@@ -15,7 +17,7 @@ let allowCrossDomain = function(req, res, next) {
 }
 
 app.use(allowCrossDomain);
-// Run Morgan for Logging
+
 app.use(logger("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,59 +26,51 @@ app.use(bodyParser.json({ type: "application/vnd.api+json" }));
 
 app.use(express.static("./public"));
 
-mongoose.connect('mongodb://localhost/nytreact');
-const db = mongoose.connection;
+// MongoDB Config
+mongoose.connect("mongodb:/localhost:3000/nytreact");
+let db = mongoose.connection;
 
-db.on("error", function (error) {
-    console.log("Mongoose Error: ", error);
+db.on("error", (err) => {
+  console.log("Mongoose Error: ", err);
 });
 
-db.once("open", function () {
-    console.log("Mongoose connection successful.");
-});
-
-
-app.get("/", function (req, res) {
-    res.sendFile(__dirname + "/public/index.html");
+db.once("open", () => {
+  console.log("Mongoose connection successful.");
 });
 
 
-app.get("/api/saved", function (req, res) {
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
+});
 
-
-    Saved.find({}).sort([
-        ["date", "descending"]
-    ]).limit(5).exec(function (err, doc) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.send(doc);
-        }
+// Find all saved articles
+app.get('/api/saved', (req, res) => {
+    Saved.find({}).exec( (err, doc) => {
+        err ? console.log(err) : res.json(doc);
     });
 });
 
-// This is the route we will send POST requests to save each search.
-app.post("/api/saved", function (req, res) {
-    console.log("BODY: " + req.body.location);
-
-    // Here we'll save the location based on the JSON input.
-    // We'll use Date.now() to always get the current date time
-    Saved.create({
-        title: req.body.title,
-        link: req.body.link,
-        date: Date.now()
-    }, function (err) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.send("Saved Search");
-        }
+// Save an article
+app.post('/api/saved', (req, res) => {
+    let title = req.body.title;
+    let link = req.body.link
+    Saved.findOneAndUpdate(
+        { title: title },
+        { $set: {link: link} }, 
+        { upsert: true }
+    ).exec( (err) =>{
+        err ? console.log(err) : console.log('You saved an article!');
     });
 });
 
-// -------------------------------------------------
+// Delete and article
+app.delete('/api/saved/:title', (req, res) => {
+    Saved.remove({title: req.params.title}).exec( (err) =>{
+        err ? console.log(err) : console.log('You deleted an article!');
+    });
+});
 
 // Listener
-app.listen(PORT, function () {
-    console.log("App listening on PORT: " + PORT);
+app.listen(PORT, () => {
+  console.log(`App listening on PORT: ${PORT}`);
 });
