@@ -5,8 +5,13 @@ const express = require('express'),
     mongoose = require('mongoose'),
     Promise = require('bluebird');
 
+// Schema
 const Saved = require('./models/Saved.js');
+
+// Express Instance
 const app = express();
+
+// Set Port
 const PORT = process.env.PORT || 3000;
 
 let allowCrossDomain = function(req, res, next) {
@@ -18,16 +23,18 @@ let allowCrossDomain = function(req, res, next) {
 
 app.use(allowCrossDomain);
 
+// Morgan initilize and bodyParser
 app.use(logger("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.text());
 app.use(bodyParser.json({ type: "application/vnd.api+json" }));
 
+// Grab public folder
 app.use(express.static("./public"));
 
 // MongoDB Config
-mongoose.connect("mongodb:/localhost:3000/nytreact");
+mongoose.connect("mongodb://heroku_5xxpcw4l:p7q03br5pv7au8nvdfmi2qi5t7@ds161099.mlab.com:61099/heroku_5xxpcw4l");
 let db = mongoose.connection;
 
 db.on("error", (err) => {
@@ -38,7 +45,9 @@ db.once("open", () => {
   console.log("Mongoose connection successful.");
 });
 
+// ------------------ Routes -------------------------------
 
+// Main route
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });

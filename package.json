@@ -1,7 +1,7 @@
 {
-  "name": "react-example",
+  "name": "nytreact",
   "version": "1.0.0",
-  "description": "",
+  "description": "NYT Article reading App using MERN stack",
   "main": "public/index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
     "start": "node server",
     "build": "webpack"
   },
-  "author": "Ahmed Haque",
+  "author": "Justin Park",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.12.0",

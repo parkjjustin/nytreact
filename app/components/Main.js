@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
-import Search from './Search.js';
-import Results from './Results.js';
-import Saved from './Saved.js';
+import Search from './children/Search.js';
+import Result from './children/Result.js';
+import Saved from './children/Saved.js';
 import helpers from './utils/helpers.js';
 
 class Main extends Component {
@@ -119,7 +119,7 @@ class Main extends Component {
                 </div>
                 <div className="row">
                     <div className="col-md-12">
-                        <Results results={this.state.results} _handleSave={this._handleSave} />
+                        <Result results={this.state.results} _handleSave={this._handleSave} />
                     </div>
                 </div>
                 <div className="row">
